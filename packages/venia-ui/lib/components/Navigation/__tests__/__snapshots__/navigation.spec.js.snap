@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders correctly when closed 1`] = `
+exports[`authModal is rendered when hasModal is true 1`] = `
 <aside
   className="root"
 >
@@ -10,7 +10,7 @@ exports[`renders correctly when closed 1`] = `
     <i />
   </header>
   <div
-    className="body"
+    className="body_masked"
   >
     <i />
   </div>
@@ -20,19 +20,19 @@ exports[`renders correctly when closed 1`] = `
     <i />
   </div>
   <div
-    className="modal"
+    className="modal_open"
   >
-    <i />
+    <LoadingIndicator />
   </div>
 </aside>
 `;
 
-exports[`renders correctly when open 1`] = `
+exports[`renders correctly when closed 1`] = `
 <aside
-  className="root_open"
+  className="root"
 >
   <header
-    className="header"
+    className="isRoot"
   >
     <i />
   </header>
@@ -48,8 +48,31 @@ exports[`renders correctly when open 1`] = `
   </div>
   <div
     className="modal"
+  />
+</aside>
+`;
+
+exports[`renders correctly when open 1`] = `
+<aside
+  className="root_open"
+>
+  <header
+    className="isRoot"
+  >
+    <i />
+  </header>
+  <div
+    className="body"
   >
     <i />
   </div>
+  <div
+    className="footer"
+  >
+    <i />
+  </div>
+  <div
+    className="modal"
+  />
 </aside>
 `;

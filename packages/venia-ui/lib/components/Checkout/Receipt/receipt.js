@@ -1,23 +1,29 @@
-import React, { Fragment, useCallback, useEffect } from 'react';
-import { bool, func, shape, string } from 'prop-types';
+import React, { Fragment } from 'react';
+import { func, shape, string } from 'prop-types';
+
+import { useReceipt } from '@magento/peregrine/lib/talons/Checkout/Receipt/useReceipt';
+
 import { mergeClasses } from '../../../classify';
 import Button from '../../Button';
 import defaultClasses from './receipt.css';
 
+/**
+ * A component that displays some basic information about an order and has
+ * a call to action for viewing order details and creating an account.
+ */
 const Receipt = props => {
-    const { createAccount, history, reset, user } = props;
+    const { onClose } = props;
+    const talonProps = useReceipt({
+        onClose
+    });
+
+    const {
+        handleCreateAccount,
+        handleViewOrderDetails,
+        isSignedIn
+    } = talonProps;
 
     const classes = mergeClasses(defaultClasses, props.classes);
-
-    useEffect(() => reset, [reset]);
-
-    const handleCreateAccount = useCallback(() => {
-        createAccount(history);
-    }, [createAccount, history]);
-
-    const handleViewOrderDetails = useCallback(() => {
-        // TODO: Implement/connect/redirect to order details page.
-    }, []);
 
     return (
         <div className={classes.root}>
@@ -27,7 +33,7 @@ const Receipt = props => {
                     You will receive an order confirmation email with order
                     status and other details.
                 </div>
-                {user.isSignedIn ? (
+                {isSignedIn ? (
                     <Fragment>
                         <div className={classes.textBlock}>
                             You can also visit your account page for more
@@ -60,20 +66,15 @@ Receipt.propTypes = {
         footer: string,
         root: string
     }),
+    drawer: string,
+    onClose: func.isRequired,
     order: shape({
         id: string
-    }).isRequired,
-    createAccount: func.isRequired,
-    reset: func.isRequired,
-    user: shape({
-        isSignedIn: bool
-    })
+    }).isRequired
 };
 
 Receipt.defaultProps = {
-    order: {},
-    reset: () => {},
-    createAccount: () => {}
+    order: {}
 };
 
 export default Receipt;

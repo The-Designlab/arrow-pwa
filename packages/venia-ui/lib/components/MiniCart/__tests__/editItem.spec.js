@@ -1,6 +1,6 @@
 import React from 'react';
 import ShallowRenderer from 'react-test-renderer/shallow';
-import { useQuery } from '@magento/peregrine';
+import { runQuery, useLazyQuery } from '@apollo/react-hooks';
 
 import EditItem from '../editItem';
 
@@ -10,28 +10,50 @@ jest.mock('react', () => {
 
     return Object.assign(React, { useEffect: spy });
 });
-jest.mock('@magento/peregrine');
+jest.mock('@apollo/react-hooks', () => {
+    const runQuery = jest.fn();
+    const queryResult = {
+        data: null,
+        error: null,
+        loading: false
+    };
+    const useLazyQuery = jest.fn(() => [runQuery, queryResult]);
 
-const renderer = new ShallowRenderer();
-const queryApi = {
-    runQuery: jest.fn(),
-    setLoading: jest.fn()
-};
-
-test('renders null when item not supplied', () => {
-    const tree = renderer.render(<EditItem />);
-
-    expect(tree).toMatchSnapshot();
+    return { runQuery, useLazyQuery };
 });
 
+const renderer = new ShallowRenderer();
+
+const props = {
+    endEditItem: jest.fn(),
+    item: {
+        id: 1,
+        product: {
+            name: 'unit test',
+            price: {
+                regularPrice: {
+                    amount: {
+                        value: 99
+                    }
+                }
+            }
+        },
+        configurable_options: ['a', 'b', 'c'],
+        quantity: 1
+    },
+    updateItemInCart: jest.fn()
+};
+
 test('renders cart options when item has no options', () => {
-    const props = {
+    const myProps = {
+        ...props,
         item: {
-            options: []
+            ...props.item,
+            configurable_options: []
         }
     };
 
-    const tree = renderer.render(<EditItem {...props} />);
+    const tree = renderer.render(<EditItem {...myProps} />);
 
     expect(tree).toMatchSnapshot();
 });
@@ -42,13 +64,7 @@ test('renders a loading indicator while running query', () => {
         error: false,
         loading: true
     };
-    useQuery.mockReturnValueOnce([queryResult, queryApi]);
-
-    const props = {
-        item: {
-            options: ['a', 'b', 'c']
-        }
-    };
+    useLazyQuery.mockReturnValueOnce([runQuery, queryResult]);
 
     const tree = renderer.render(<EditItem {...props} />);
 
@@ -61,13 +77,7 @@ test('renders a loading indicator if no data', () => {
         error: false,
         loading: false
     };
-    useQuery.mockReturnValueOnce([queryResult, queryApi]);
-
-    const props = {
-        item: {
-            options: ['a', 'b', 'c']
-        }
-    };
+    useLazyQuery.mockReturnValueOnce([runQuery, queryResult]);
 
     const tree = renderer.render(<EditItem {...props} />);
 
@@ -80,13 +90,7 @@ test('renders an error message when an error occurs', () => {
         error: true,
         loading: false
     };
-    useQuery.mockReturnValueOnce([queryResult, queryApi]);
-
-    const props = {
-        item: {
-            options: ['a', 'b', 'c']
-        }
-    };
+    useLazyQuery.mockReturnValueOnce([runQuery, queryResult]);
 
     const tree = renderer.render(<EditItem {...props} />);
 
@@ -97,17 +101,11 @@ test('renders cart options when item has options', () => {
     const queryResult = {
         data: {
             products: {
-                items: []
+                items: [{}]
             }
         }
     };
-    useQuery.mockReturnValueOnce([queryResult, queryApi]);
-
-    const props = {
-        item: {
-            options: ['a', 'b', 'c']
-        }
-    };
+    useLazyQuery.mockReturnValueOnce([runQuery, queryResult]);
 
     const tree = renderer.render(<EditItem {...props} />);
 

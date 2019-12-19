@@ -1,78 +1,80 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { array, func, number, shape, string } from 'prop-types';
+
 import { Price } from '@magento/peregrine';
+import { useProduct } from '@magento/peregrine/lib/talons/MiniCart/useProduct';
+import { transparentPlaceholder } from '@magento/peregrine/lib/util/images';
 
 import { mergeClasses } from '../../classify';
-import { resourceUrl } from '@magento/venia-drivers';
-
 import Image from '../Image';
-import { transparentPlaceholder } from '../../shared/images';
-
 import Kebab from './kebab';
+import defaultClasses from './product.css';
 import ProductOptions from './productOptions';
 import Section from './section';
+import CREATE_CART_MUTATION from '../../queries/createCart.graphql';
+import REMOVE_ITEM_MUTATION from '../../queries/removeItem.graphql';
+import GET_CART_DETAILS_QUERY from '../../queries/getCartDetails.graphql';
 
-import defaultClasses from './product.css';
-
-const imageWidth = 80;
-const imageHeight = 100;
+const PRODUCT_IMAGE_WIDTH = 80;
 
 const Product = props => {
-    const { beginEditItem, currencyCode, item, removeItemFromCart } = props;
-    const { image, name, options, price, qty } = item;
+    const { beginEditItem, currencyCode, item } = props;
 
-    const [isFavorite, setIsFavorite] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const talonProps = useProduct({
+        beginEditItem,
+        createCartMutation: CREATE_CART_MUTATION,
+        getCartDetailsQuery: GET_CART_DETAILS_QUERY,
+        item,
+        removeItemMutation: REMOVE_ITEM_MUTATION
+    });
+
+    const {
+        handleEditItem,
+        handleFavoriteItem,
+        handleRemoveItem,
+        isFavorite,
+        isLoading,
+        productImage,
+        productName,
+        productOptions,
+        productPrice,
+        productQuantity
+    } = talonProps;
 
     const classes = mergeClasses(defaultClasses, props.classes);
+
+    const productImageComponent = useMemo(() => {
+        const imageProps = {
+            alt: productName,
+            classes: { image: classes.image, root: classes.imageContainer },
+            width: PRODUCT_IMAGE_WIDTH
+        };
+
+        if (!productImage) {
+            imageProps.src = transparentPlaceholder;
+        } else {
+            imageProps.resource = productImage;
+        }
+
+        return <Image {...imageProps} />;
+    }, [classes.image, classes.imageContainer, productImage, productName]);
+
     const mask = isLoading ? <div className={classes.mask} /> : null;
-
-    const productImage = useMemo(() => {
-        const src =
-            image && image.file
-                ? resourceUrl(image.file, {
-                      type: 'image-product',
-                      width: imageWidth,
-                      height: imageHeight
-                  })
-                : transparentPlaceholder;
-
-        return (
-            <Image
-                alt={name}
-                classes={{ root: classes.image }}
-                placeholder={transparentPlaceholder}
-                src={src}
-                fileSrc={image.file}
-                sizes={`${imageWidth}px`}
-            />
-        );
-    }, [image, name, classes.image]);
-
-    const handleFavoriteItem = useCallback(() => {
-        setIsFavorite(!isFavorite);
-    }, [isFavorite]);
-    const handleEditItem = useCallback(() => {
-        beginEditItem(item);
-    }, [beginEditItem, item]);
-    const handleRemoveItem = useCallback(() => {
-        setIsLoading(true);
-
-        // TODO: prompt user to confirm this action?
-        removeItemFromCart({ item });
-    }, [item, removeItemFromCart]);
 
     return (
         <li className={classes.root}>
-            {productImage}
-            <div className={classes.name}>{name}</div>
-            <ProductOptions options={options} />
+            {productImageComponent}
+            <div className={classes.name}>{productName}</div>
+            <ProductOptions options={productOptions} />
             <div className={classes.quantity}>
                 <div className={classes.quantityRow}>
-                    <span>{qty}</span>
+                    <span>{productQuantity}</span>
                     <span className={classes.quantityOperator}>{'×'}</span>
                     <span className={classes.price}>
-                        <Price currencyCode={currencyCode} value={price} />
+                        <Price
+                            currencyCode={currencyCode}
+                            value={productPrice}
+                        />
                     </span>
                 </div>
             </div>
@@ -110,8 +112,7 @@ Product.propTypes = {
         options: array,
         price: number,
         qty: number
-    }).isRequired,
-    removeItemFromCart: func.isRequired
+    }).isRequired
 };
 
 export default Product;

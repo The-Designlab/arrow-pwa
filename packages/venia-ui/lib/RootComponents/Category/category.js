@@ -1,29 +1,20 @@
 import React, { useEffect } from 'react';
 import { number, shape, string } from 'prop-types';
-import { usePagination, useQuery } from '@magento/peregrine';
+import { useLazyQuery } from '@apollo/react-hooks';
+import { usePagination } from '@magento/peregrine';
 
-import { toggleDrawer } from '../../actions/app';
-import catalogActions from '../../actions/catalog';
 import { mergeClasses } from '../../classify';
-
 import { fullPageLoadingIndicator } from '../../components/LoadingIndicator';
-import { connect, withRouter } from '@magento/venia-drivers';
-import { compose } from 'redux';
-import categoryQuery from '../../queries/getCategory.graphql';
-import isObjectEmpty from '../../util/isObjectEmpty';
-import { getFilterParams } from '../../util/getFilterParamsFromUrl';
+import GET_CATEGORY from '../../queries/getCategory.graphql';
+import NoProductsFound from './NoProductsFound';
 import CategoryContent from './categoryContent';
 import defaultClasses from './category.css';
+import { Meta } from '../../components/Head';
 
 const Category = props => {
-    const { filterClear, id, openDrawer, pageSize } = props;
+    const { id, pageSize } = props;
     const classes = mergeClasses(defaultClasses, props.classes);
-
-    const [paginationValues, paginationApi] = usePagination({
-        history: props.history,
-        location: props.location
-    });
-
+    const [paginationValues, paginationApi] = usePagination();
     const { currentPage, totalPages } = paginationValues;
     const { setCurrentPage, setTotalPages } = paginationApi;
 
@@ -33,20 +24,11 @@ const Category = props => {
         totalPages
     };
 
-    const [queryResult, queryApi] = useQuery(categoryQuery);
-    const { data, error, loading } = queryResult;
-    const { runQuery, setLoading } = queryApi;
+    const [runQuery, queryResponse] = useLazyQuery(GET_CATEGORY);
+    const { loading, error, data } = queryResponse;
 
-    // clear any stale filters
+    // Run the category query immediately and whenever its variable values change.
     useEffect(() => {
-        if (isObjectEmpty(getFilterParams())) {
-            filterClear();
-        }
-    }, [filterClear]);
-
-    // run the category query
-    useEffect(() => {
-        setLoading(true);
         runQuery({
             variables: {
                 currentPage: Number(currentPage),
@@ -62,7 +44,7 @@ const Category = props => {
             top: 0,
             behavior: 'smooth'
         });
-    }, [currentPage, id, pageSize, runQuery, setLoading]);
+    }, [currentPage, id, pageSize, runQuery]);
 
     const totalPagesFromData = data
         ? data.products.page_info.total_pages
@@ -91,18 +73,31 @@ const Category = props => {
     }
 
     // Show the loading indicator until data has been fetched.
-    if (!totalPagesFromData) {
+    if (totalPagesFromData === null) {
         return fullPageLoadingIndicator;
     }
 
+    const content =
+        totalPagesFromData === 0 ? (
+            <NoProductsFound categoryId={id} />
+        ) : (
+            <CategoryContent
+                classes={classes}
+                data={loading ? null : data}
+                pageControl={pageControl}
+            />
+        );
+
     return (
-        <CategoryContent
-            classes={classes}
-            data={loading ? null : data}
-            filterClear={filterClear}
-            openDrawer={openDrawer}
-            pageControl={pageControl}
-        />
+        <>
+            <Meta
+                name="description"
+                content={
+                    data && data.category && data.category.meta_description
+                }
+            />
+            {content}
+        </>
     );
 };
 
@@ -123,15 +118,4 @@ Category.defaultProps = {
     pageSize: 6
 };
 
-const mapDispatchToProps = dispatch => ({
-    filterClear: () => dispatch(catalogActions.filterOption.clear()),
-    openDrawer: () => dispatch(toggleDrawer('filter'))
-});
-
-export default compose(
-    withRouter,
-    connect(
-        null,
-        mapDispatchToProps
-    )
-)(Category);
+export default Category;

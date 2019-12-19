@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { array, func, shape, string } from 'prop-types';
-import { List } from '@magento/peregrine';
 
 import { mergeClasses } from '../../classify';
 
@@ -8,33 +7,26 @@ import Product from './product';
 import defaultClasses from './productList.css';
 
 const ProductList = props => {
-    const {
-        beginEditItem,
-        cartItems,
-        currencyCode,
-        removeItemFromCart
-    } = props;
+    const { beginEditItem, cartItems, currencyCode } = props;
 
-    const classes = mergeClasses(defaultClasses, props.classes);
-
-    return (
-        <List
-            classes={classes}
-            getItemKey={item => item.item_id}
-            items={cartItems}
-            render="ul"
-            renderItem={props => {
+    const products = useMemo(
+        () =>
+            cartItems.map(product => {
                 return (
                     <Product
                         beginEditItem={beginEditItem}
                         currencyCode={currencyCode}
-                        item={props.item}
-                        removeItemFromCart={removeItemFromCart}
+                        item={product}
+                        key={product.id}
                     />
                 );
-            }}
-        />
+            }),
+        [beginEditItem, cartItems, currencyCode]
     );
+
+    const classes = mergeClasses(defaultClasses, props.classes);
+
+    return <ul className={classes.root}>{products}</ul>;
 };
 
 ProductList.propTypes = {
@@ -43,8 +35,7 @@ ProductList.propTypes = {
     classes: shape({
         root: string
     }),
-    currencyCode: string,
-    removeItemFromCart: func
+    currencyCode: string
 };
 
 export default ProductList;

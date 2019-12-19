@@ -1,11 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`renders a list of Products when items are supplied 1`] = `
-<List
-  classes={Object {}}
-  getItemKey={[Function]}
-  items={
-    Array [
+<ul>
+  <Product
+    beginEditItem={[MockFunction]}
+    currencyCode="USD"
+    item={
       Object {
         "item_id": 1,
         "name": "unit test",
@@ -14,7 +14,13 @@ exports[`renders a list of Products when items are supplied 1`] = `
         "qty": 1,
         "quote_id": 1,
         "sku": "sku1",
-      },
+      }
+    }
+  />
+  <Product
+    beginEditItem={[MockFunction]}
+    currencyCode="USD"
+    item={
       Object {
         "item_id": 2,
         "name": "unit test",
@@ -23,22 +29,10 @@ exports[`renders a list of Products when items are supplied 1`] = `
         "qty": 1,
         "quote_id": 1,
         "sku": "sku2",
-      },
-    ]
-  }
-  render="ul"
-  renderItem={[Function]}
-  selectionModel="radio"
-/>
+      }
+    }
+  />
+</ul>
 `;
 
-exports[`renders a list with no items when items are not supplied 1`] = `
-<List
-  classes={Object {}}
-  getItemKey={[Function]}
-  items={Array []}
-  render="ul"
-  renderItem={[Function]}
-  selectionModel="radio"
-/>
-`;
+exports[`renders a list with no items when items are not supplied 1`] = `<ul />`;
